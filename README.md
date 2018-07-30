@@ -1,2 +1,2 @@
 # LSTM_language_model
-Feed forward language model based on LSTM
+Simple feed forward language model based on LSTM
