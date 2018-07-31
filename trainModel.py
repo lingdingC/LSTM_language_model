@@ -1,4 +1,4 @@
-import pickle, torch
+import pickle, torch, sys, os
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ def repackage_hidden(h):
         return tuple(repackage_hidden(v) for v in h)
 
 
-def trainModel(model, documents, vocab, batch_size, modelName="",
+def trainModel(model, documents, vocab, batch_size, outDir, modelName="",
                 num_iterations=1000):
 
 
@@ -81,36 +81,38 @@ def trainModel(model, documents, vocab, batch_size, modelName="",
         if epoch > 0 and epoch % 100 == 0:
             print(str(epoch) + " epoch")
             print("loss: " + str(totalLoss / numDoc))
-            with open("./test/trainingLog/testTrainingLog.txt", "a") as outf:
+            with open(os.path.join(outDir, "testTrainingLog.txt"), "a") as outf:
                 outf.write("{0}\t{1}\n".format(epoch, totalLoss / numDoc))
-            save_model(model, modelName + "e" + str(epoch))
+            save_model(model, modelName + "e" + str(epoch), outDir)
 
     print("finish training")
     return model
 
 
-def save_model(model, model_name, vocab=None):
+def save_model(model, model_name, outDir, vocab=None):
+    modelFile = "{0}_hid{1}_emb{2}_vocab{3}".format(
+                model_name, model.hiddenDim, model.embeddingDim, model.vocabSize)
 
-    torch.save(model.state_dict(), "./test/models/{0}_hid{1}_emb{2}_vocab{3}".format(
-        model_name, model.hiddenDim, model.embeddingDim,
-        model.vocabSize))
+    torch.save(model.state_dict(), os.path.join(outDir, modelFile))
 
     if vocab is not None:
-        with open("./test/vocabulary/{0}_hid{1}_emb{2}_vocab{3}".format(
-                model_name, model.hiddenDim, model.embeddingDim,
-                model.vocabSize), "wb") as outf:
+        dictFile = "dict_" + modelFile
+        with open(os.path.join(outDir, dictFile), "wb") as outf:
             pickle.dump(vocab, outf)
 
 
 
 def main():
-
-    samplePath = "./test/documents/testDoc.csv"
+    # "./test/documents/testDoc.csv"
+    samplePath = sys.argv[1]
     text_documents = readFile(samplePath)
     word_to_idx = buildVocabDict(text_documents)
     print(word_to_idx)
 
-    dictPath = "./test/vocabulary/test_word_to_idx"
+    # "./test/vocabulary/test_word_to_idx"
+    dictPath = sys.argv[2]
+
+    outDir = sys.argv[3]
     # Save the dict so that it can be used for predicting
     with open(dictPath, 'wb') as outf:
         pickle.dump(word_to_idx, outf)
@@ -126,7 +128,7 @@ def main():
     model = LSTMlanguageModel(embedSize, hiddSize, numLSTM,
                               vocabSize, batchSize)
     print("trainning model")
-    model = trainModel(model, text_documents, word_to_idx, batchSize)
+    model = trainModel(model, text_documents, word_to_idx, batchSize, outDir)
 
 
 

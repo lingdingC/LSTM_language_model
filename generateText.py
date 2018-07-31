@@ -1,4 +1,4 @@
-import pickle, torch
+import pickle, torch, os
 from languageModel import LSTMlanguageModel
 
 # Use cuda if it's available
@@ -43,18 +43,22 @@ def generate(model, inv_vocab, prev_word_idx, length=100):
 
 
 def main():
+    modelFile = sys.argv[1]
+    dictFile = sys.argv[2]
+
+
     embedSize = 256
     hiddSize = 256
     numLSTM = 2
     batchSize = 16
-    word_to_idx = load_vocab("./test/vocabulary/test_word_to_idx")
+    word_to_idx = load_vocab(dictFile)
     vocabSize = len(word_to_idx)
 
 
     model = LSTMlanguageModel(embedSize, hiddSize, numLSTM,
                               vocabSize, batchSize)
 
-    model.load_state_dict(torch.load("./test/models/e100_hid256_emb256_vocab9"))
+    model.load_state_dict(torch.load(modelFile))
     model = model.eval()
     idx_to_word = {v: k for k, v in word_to_idx.items()}
 
